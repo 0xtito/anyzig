@@ -878,11 +878,18 @@ fn getVersionUrl(
     app_data_path: []const u8,
     semantic_version: SemanticVersion,
 ) !DownloadUrl {
-    if (build_options.exe == .zls) return DownloadUrl.initOfficial(std.fmt.allocPrint(
-        arena,
-        "https://builds.zigtools.org/zls-{s}-{}.{s}",
-        .{ os_arch, semantic_version, archive_ext },
-    ) catch |e| oom(e));
+    if (build_options.exe == .zls) {
+        // ZLS 0.15+ changed filename format from os-arch to arch-os
+        const zls_platform = if (semantic_version.major == 0 and semantic_version.minor >= 15)
+            arch_os
+        else
+            os_arch;
+        return DownloadUrl.initOfficial(std.fmt.allocPrint(
+            arena,
+            "https://builds.zigtools.org/zls-{s}-{}.{s}",
+            .{ zls_platform, semantic_version, archive_ext },
+        ) catch |e| oom(e));
+    }
 
     if (!isMachVersion(semantic_version)) return makeOfficialUrl(arena, semantic_version);
 
